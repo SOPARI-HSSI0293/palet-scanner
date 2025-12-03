@@ -536,12 +536,9 @@
                     'Jam Transaksi': jam,
                     'Keterangan': kondisi,
                     
-                    // MODIFIKASI 2: PASTIKAN USERNAME TERSIMPAN
-                    // Menggunakan beberapa variasi key untuk memastikan salah satunya cocok dengan header di Google Sheet
-                    'Username': username,  // Prioritas Utama: "Username"
-                    'username': username,  // Cadangan: "username" (kecil)
-                    'USERNAME': username,  // Cadangan: "USERNAME" (besar)
-                    'User': username,      // Cadangan: "User"
+                    // PERBAIKAN: KHUSUS UNTUK KOLOM "username" (huruf kecil semua)
+                    // Menghapus key lain agar script penerima tidak bingung.
+                    'username': username,
                     
                     'Driver': driver,
                     'Submitted By': username 
