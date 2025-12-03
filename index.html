@@ -292,10 +292,10 @@
                     const u = r.c[0] && r.c[0].v ? String(r.c[0].v).trim() : '';
                     const p = r.c[1] && r.c[1].v ? String(r.c[1].v).trim() : '';
                     
-                    // MODIFIKASI: Perbandingan Username Case-Insensitive (Huruf Besar/Kecil dianggap sama)
+                    // MODIFIKASI 1: Perbandingan Username Case-Insensitive (Huruf Besar/Kecil dianggap sama saat LOGIN)
                     if (u.toLowerCase() === username.toLowerCase() && p === password) {
                         foundUser = {
-                            username: u, // Simpan username asli dari Database (bukan yang diketik user)
+                            username: u, // Menggunakan username asli dari database untuk konsistensi
                             role: r.c[2] && r.c[2].v ? String(r.c[2].v).trim() : 'User'
                         };
                         break;
@@ -535,11 +535,15 @@
                     'Jumlah Palet': ids.length,
                     'Jam Transaksi': jam,
                     'Keterangan': kondisi,
-                    // FIX: Menggunakan username dari state currentUser, disimpan ke 2 key untuk berjaga-jaga
-                    'Username': username, 
-                    'USERNAME': username,
+                    
+                    // MODIFIKASI 2: PASTIKAN USERNAME TERSIMPAN
+                    // Menggunakan beberapa variasi key untuk memastikan salah satunya cocok dengan header di Google Sheet
+                    'Username': username,  // Prioritas Utama: "Username"
+                    'username': username,  // Cadangan: "username" (kecil)
+                    'USERNAME': username,  // Cadangan: "USERNAME" (besar)
+                    'User': username,      // Cadangan: "User"
+                    
                     'Driver': driver,
-                    // FIX: Menggunakan username dari state currentUser
                     'Submitted By': username 
                 });
             }
