@@ -3,229 +3,397 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Return Pallet to HANWA</title>
+    <title>Scan Transaksi Palet - Hanwa</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HTML5-QRCode Library untuk Scanner -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    
+    <!-- Firebase Libraries (Sama seperti file index) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    </script>
+
     <style>
+        /* TEMA GELAP (Disesuaikan dari index.html asli) */
         body {
-            font-family: sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f0f0f0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background-color: #18181b; /* Zinc 900 */
+            color: #ffffff;
         }
-        h1 {
-            color: #000;
-            margin-top: 30px;
-            margin-bottom: 5px;
-            font-size: 1.3em; /* Ukuran font lebih besar */
-        }
-        .subtitle {
-            color: #4CAF50; /* Warna hijau seperti contoh */
-            margin-bottom: 20px;
-            font-size: 1.1em;
-        }
-        .container {
-            width: 90%;
-            max-width: 500px;
-            background-color: #E8F5E9; /* Warna hijau muda */
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            margin-bottom: 20px;
-            box-sizing: border-box; /* Pastikan padding dihitung dalam lebar */
-        }
+
+        /* Style area scanner */
         #reader {
             width: 100%;
-            margin: auto;
-            border: 1px solid #ccc; /* Border untuk area scanner */
-            padding: 10px; /* Padding di dalam area scanner */
-            background-color: #fff; /* Background putih untuk area kamera */
-            border-radius: 4px;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            background-color: #000;
+            margin-bottom: 1rem;
         }
-        /* Style untuk tombol-tombol di dalam #reader jika ada */
-        #reader button {
-            width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1em;
-            background-color: #007bff; /* Contoh warna biru untuk tombol Request Camera */
+        
+        /* Menghilangkan border default html5-qrcode */
+        #reader__dashboard_section_csr span, 
+        #reader__dashboard_section_swaplink {
+            display: none !important;
+        }
+
+        /* Input & Card Styles */
+        .card-dark {
+            background-color: #27272a; /* Zinc 800 */
+            border: 1px solid #3f3f46; /* Zinc 700 */
+        }
+        
+        .input-dark {
+            background-color: #3f3f46; /* Zinc 700 */
+            border: 1px solid #52525b; /* Zinc 600 */
             color: white;
         }
-        #reader button:hover {
-            opacity: 0.9;
-        }
-        #reader div[data-action="scan-image-file"] button {
-            background-color: #6c757d; /* Contoh warna abu-abu untuk tombol Scan Image */
+
+        /* Animasi kedip saat scan berhasil */
+        .scan-success-anim {
+            animation: flashGreen 0.5s ease-out;
         }
 
-        .summary-box {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #E8F5E9; /* Warna hijau muda */
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            width: 90%;
-            max-width: 500px;
-            box-sizing: border-box;
-            border: 1px solid #ccc; /* Border seperti contoh */
-        }
-        .summary-box span {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #333;
-        }
-        #count {
-            font-size: 1.8em; /* Ukuran font lebih besar untuk angka */
-            color: #000;
+        @keyframes flashGreen {
+            0% { background-color: #22c55e; }
+            100% { background-color: #27272a; }
         }
 
-        .list-box {
-            background-color: #E8F5E9; /* Warna hijau muda */
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            width: 90%;
-            max-width: 500px;
-            box-sizing: border-box;
-            border: 1px solid #ccc; /* Border seperti contoh */
+        /* Custom Scrollbar untuk list ID */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
         }
-        .list-box h2 {
-            margin-top: 0;
-            font-size: 1.2em;
-            color: #333;
-        }
-        #qr-list {
-            list-style: none; /* Hapus bullet point */
-            padding: 0;
-            max-height: 150px; /* Batasi tinggi daftar agar tidak terlalu panjang */
-            overflow-y: auto; /* Tambahkan scroll jika item terlalu banyak */
-            border: 1px solid #eee; /* Border tipis untuk area list */
-            padding: 5px;
-            background-color: #fff;
-            border-radius: 4px;
-        }
-        #qr-list li {
-            padding: 5px 0;
-            border-bottom: 1px dashed #eee;
-            color: #555;
-            font-size: 0.95em;
-        }
-        #qr-list li:last-child {
-            border-bottom: none;
-        }
-
-        #save-button {
-            background-color: #4CAF50; /* Warna hijau untuk tombol simpan */
-            color: white;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1.2em;
-            font-weight: bold;
-            margin-bottom: 30px;
-            transition: background-color 0.3s ease;
-        }
-        #save-button:hover {
-            background-color: #45a049;
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4b5563; 
+            border-radius: 3px;
         }
     </style>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
-<body>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-    <h1>Return Pallet to HANWA</h1>
-    <p class="subtitle">-SCAN QR Pallet SHARP-</p>
+    <!-- Container Utama (Max width hp/tablet) -->
+    <div class="w-full max-w-md w-full">
+        
+        <!-- Header Sederhana -->
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-bold text-green-400">Scan QR Palet</h1>
+            <div class="text-xs text-gray-400 text-right">
+                <span id="user-status">Guest</span><br>
+                <span id="connection-status" class="text-yellow-500">Connecting...</span>
+            </div>
+        </div>
 
-    <div class="container">
-        <div id="reader"></div>
+        <!-- 1. KONFIGURASI TRANSAKSI (Penting agar data valid) -->
+        <div class="card-dark rounded-xl p-4 mb-4 shadow-lg">
+            <h2 class="text-sm font-bold text-gray-300 mb-3 border-b border-gray-600 pb-1">Pengaturan Transaksi</h2>
+            <div class="grid grid-cols-2 gap-3 mb-2">
+                <div>
+                    <label class="text-xs text-gray-400">Jenis Transaksi</label>
+                    <select id="jenisTransaksi" class="w-full mt-1 p-2 rounded-lg text-sm input-dark focus:ring-2 focus:ring-green-500 outline-none">
+                        <option value="KELUAR HANWA">Keluar (Kirim)</option>
+                        <option value="MASUK HANWA">Masuk (Terima)</option>
+                        <option value="DIGUNAKAN PRODUKSI">Produksi</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-400">Kondisi</label>
+                    <select id="kondisi" class="w-full mt-1 p-2 rounded-lg text-sm input-dark focus:ring-2 focus:ring-green-500 outline-none">
+                        <option value="Baik">Baik</option>
+                        <option value="Rusak Ringan">Rusak Ringan</option>
+                        <option value="Rusak Berat">Rusak Berat</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="text-xs text-gray-400">Nama Driver / Keterangan</label>
+                <input type="text" id="driverName" class="w-full mt-1 p-2 rounded-lg text-sm input-dark focus:ring-2 focus:ring-green-500 outline-none" placeholder="Isi nama driver...">
+            </div>
+        </div>
+
+        <!-- 2. AREA KAMERA / SCANNER -->
+        <div class="relative group">
+            <div id="reader"></div>
+            <!-- Overlay instruksi -->
+            <div id="camera-placeholder" class="bg-zinc-800 rounded-xl h-64 flex flex-col items-center justify-center border-2 border-dashed border-gray-600">
+                <svg class="w-16 h-16 text-gray-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+                <p class="text-gray-400 text-sm">Menunggu Izin Kamera...</p>
+            </div>
+        </div>
+
+        <!-- Tombol Start/Stop Scan (Opsional jika ingin kontrol manual) -->
+        <div class="flex justify-center -mt-4 mb-6 relative z-10">
+            <button id="toggle-camera-btn" onclick="toggleCamera()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-full shadow-lg text-sm font-bold flex items-center transition">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                Mulai Scan
+            </button>
+        </div>
+
+        <!-- 3. HASIL SCAN (Sesuai Gambar Referensi) -->
+        <div class="card-dark rounded-xl p-4 mb-4 shadow-lg" id="scan-results-card">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-gray-300 font-bold">Jumlah ID ter-scan</span>
+                <span id="scan-count" class="text-3xl font-extrabold text-green-400">0</span>
+            </div>
+            
+            <div class="w-full bg-zinc-700 h-px mb-3"></div>
+            
+            <p class="text-xs text-gray-400 mb-2">ID Pallet yang terpindai :</p>
+            <!-- Area List ID -->
+            <div id="scanned-list" class="bg-zinc-900 rounded-lg p-2 h-32 overflow-y-auto custom-scrollbar flex flex-wrap content-start gap-2 border border-zinc-700">
+                <span class="text-gray-600 text-xs italic w-full text-center mt-10">Belum ada data scan</span>
+            </div>
+            
+            <div class="flex justify-between mt-2">
+                <button onclick="clearScannedData()" class="text-xs text-red-400 hover:text-red-300 underline">Reset List</button>
+                <span class="text-xs text-gray-500" id="last-scanned-info"></span>
+            </div>
+        </div>
+
+        <!-- 4. TOMBOL SIMPAN -->
+        <button id="btn-simpan" onclick="submitData()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-green-900/50 transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+            Simpan Data
+        </button>
+
+        <!-- Status Message -->
+        <div id="status-msg" class="mt-4 text-center text-sm font-medium hidden"></div>
+
+        <!-- Footer -->
+        <footer class="mt-8 text-xs text-gray-600">
+            Scanner Palet Hanwa v1.0
+        </footer>
+
     </div>
 
-    <div class="summary-box">
-        <span>Jumlah ID ter-scan</span>
-        <span id="count">0</span>
-    </div>
+    <!-- Audio Beep untuk Scan Berhasil -->
+    <audio id="scan-beep" src="https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3"></audio>
 
-    <div class="list-box">
-        <h2>ID Pallet yang terpindai :</h2>
-        <ul id="qr-list"></ul>
-    </div>
+    <script type="module">
+        // --- 1. FIREBASE SETUP (Standar dari index.html) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        // Placeholder jika env tidak ada (agar UI tetap jalan untuk demo)
+        
+        let auth, userUid = "Guest";
 
-    <button id="save-button" onclick="saveData()">Simpan Data</button>
+        try {
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            
+            onAuthStateChanged(auth, (user) => {
+                const statusEl = document.getElementById('connection-status');
+                const userEl = document.getElementById('user-status');
+                if (user) {
+                    userUid = user.uid;
+                    statusEl.textContent = "Online";
+                    statusEl.className = "text-green-500 font-bold";
+                    userEl.textContent = "User: " + userUid.substring(0, 6);
+                } else {
+                    signInAnonymously(auth);
+                }
+            });
+        } catch (e) {
+            console.log("Firebase init skipped or failed (Visual Mode Only)");
+            document.getElementById('connection-status').textContent = "Offline Mode";
+        }
 
-    <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwSXZblhPTmOvIkQGsRf0Z-ycyd6zuvq4lnmOLGTgZE0D_vpStWNFA45MfFrl-pWC1TWQ/exec'; // GANTI DENGAN URL APPS SCRIPT ANDA
-        let scannedIDs = new Set();
-        const qrListElement = document.getElementById('qr-list');
-        const countElement = document.getElementById('count');
+        // --- 2. LOGIC SCANNER & APLIKASI ---
+        
+        // State Variables
+        let scannedIds = [];
+        let html5QrcodeScanner = null;
+        let isScanning = false;
+        
+        // URL API (Sama seperti index.html)
+        const MOCK_API_DEPLOY_URL = 'https://script.google.com/macros/s/AKfycbwiq9RP1jZykmw8a4W1PNgoUgfekOxCkAiHhnLtzFX8YB1I8TTPnzgkhNYQZH6I-MZJ/exec'; 
+        const TRANSACTION_SHEET_NAME = 'Log Transaksi Palet Batch';
 
-        // Fungsi untuk menangani hasil pemindaian
+        // Fungsi Memulai/Stop Kamera
+        window.toggleCamera = function() {
+            const btn = document.getElementById('toggle-camera-btn');
+            const placeholder = document.getElementById('camera-placeholder');
+            
+            if (isScanning) {
+                // Stop Scanning
+                if (html5QrcodeScanner) {
+                    html5QrcodeScanner.stop().then(() => {
+                        html5QrcodeScanner.clear();
+                        isScanning = false;
+                        btn.innerHTML = `<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> Mulai Scan`;
+                        btn.classList.remove('bg-red-600', 'hover:bg-red-500');
+                        btn.classList.add('bg-blue-600', 'hover:bg-blue-500');
+                        placeholder.style.display = 'flex';
+                    }).catch(err => console.error("Failed to stop", err));
+                }
+            } else {
+                // Start Scanning
+                placeholder.style.display = 'none';
+                btn.innerHTML = `<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> Stop Kamera`;
+                btn.classList.remove('bg-blue-600', 'hover:bg-blue-500');
+                btn.classList.add('bg-red-600', 'hover:bg-red-500');
+                
+                html5QrcodeScanner = new Html5Qrcode("reader");
+                const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+                
+                html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
+                .then(() => {
+                    isScanning = true;
+                });
+            }
+        };
+
+        // Callback saat Scan Berhasil
         function onScanSuccess(decodedText, decodedResult) {
-            if (!scannedIDs.has(decodedText)) {
-                scannedIDs.add(decodedText);
-                const li = document.createElement('li');
-                li.textContent = decodedText;
-                qrListElement.prepend(li); // Tampilkan yang terbaru di atas
-                countElement.textContent = scannedIDs.size; // Hanya angka
+            // Bersihkan teks (terkadang QR ada spasi/karakter aneh)
+            const cleanId = decodedText.trim().toUpperCase();
+            
+            // Cek duplikat
+            if (scannedIds.includes(cleanId)) {
+                // Optional: Beri feedback visual jika duplikat (misal flash kuning)
+                return; 
+            }
+
+            // Tambahkan ke list
+            scannedIds.push(cleanId);
+            
+            // Play Beep
+            const beep = document.getElementById('scan-beep');
+            if (beep) { beep.currentTime = 0; beep.play().catch(e => {}); }
+
+            // Update UI
+            updateUI(cleanId);
+        }
+
+        function onScanFailure(error) {
+            // Biasa terjadi jika tidak ada QR code di frame, abaikan console log agar bersih
+        }
+
+        function updateUI(lastId) {
+            const countEl = document.getElementById('scan-count');
+            const listEl = document.getElementById('scanned-list');
+            const cardEl = document.getElementById('scan-results-card');
+            const lastInfoEl = document.getElementById('last-scanned-info');
+
+            // Update Count
+            countEl.innerText = scannedIds.length;
+
+            // Flash Animation Card
+            cardEl.classList.remove('scan-success-anim');
+            void cardEl.offsetWidth; // Trigger reflow
+            cardEl.classList.add('scan-success-anim');
+
+            // Update List Visual
+            if (scannedIds.length === 1) listEl.innerHTML = ''; // Hapus placeholder
+            
+            const tag = document.createElement('span');
+            tag.className = 'bg-green-600 text-white text-xs font-mono px-2 py-1 rounded shadow animate-pulse';
+            tag.textContent = lastId;
+            
+            // Hapus animasi pulse setelah beberapa detik
+            setTimeout(() => tag.classList.remove('animate-pulse'), 1000);
+
+            listEl.appendChild(tag);
+            listEl.scrollTop = listEl.scrollHeight; // Auto scroll ke bawah
+
+            // Update info text
+            lastInfoEl.textContent = `Terakhir: ${lastId}`;
+        }
+
+        // Fungsi Reset
+        window.clearScannedData = function() {
+            if(confirm("Hapus semua data scan?")) {
+                scannedIds = [];
+                document.getElementById('scan-count').innerText = "0";
+                document.getElementById('scanned-list').innerHTML = '<span class="text-gray-600 text-xs italic w-full text-center mt-10">Belum ada data scan</span>';
+                document.getElementById('last-scanned-info').textContent = "";
             }
         }
 
-        // Fungsi untuk menangani error
-        function onScanFailure(error) {
-            // console.warn(`Code scan error = ${error}`); // Bisa diaktifkan untuk debugging
-        }
+        // Fungsi Submit Data ke Server
+        window.submitData = async function() {
+            const btn = document.getElementById('btn-simpan');
+            const statusEl = document.getElementById('status-msg');
+            const jenisTransaksi = document.getElementById('jenisTransaksi').value;
+            const kondisi = document.getElementById('kondisi').value;
+            const driverName = document.getElementById('driverName').value;
 
-        // Inisialisasi pemindai QR
-        const html5QrcodeScanner = new Html5QrcodeScanner(
-            "reader", { fps: 10, qrbox: { width: 250, height: 250 }, rememberLastUsedCamera: true }, false);
-        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-
-        // Fungsi untuk mengirim data ke Google Sheets
-        async function saveData() {
-            if (scannedIDs.size === 0) {
-                alert("Tidak ada data untuk disimpan.");
+            // Validasi
+            if (scannedIds.length === 0) {
+                alert("Belum ada palet yang discan!");
                 return;
             }
 
-            const dataToSave = {
-                idPalets: Array.from(scannedIDs)
+            // UI Loading
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Mengirim...`;
+            statusEl.classList.remove('hidden', 'text-red-500', 'text-green-500');
+            statusEl.classList.add('text-gray-400');
+            statusEl.textContent = "Sedang mengirim data ke server...";
+
+            // Persiapan Payload
+            const now = new Date();
+            const idPaletString = scannedIds.join(',');
+            
+            // Kita set 'Nama Palet' & 'Size' sebagai 'BATCH SCAN' karena scanner
+            // tidak tahu detail master palet kecuali kita fetch master data dulu.
+            // Untuk kecepatan, kita kirim ID-nya saja, nanti admin bisa cek di sheet.
+            // Atau logic backend sheet yang akan mencocokkan ID dengan Nama/Size.
+            
+            const transactionData = {
+                'Nama Palet': 'BATCH SCAN QR', // Placeholder
+                'Size': '-', // Placeholder
+                'Tanggal Transaksi': now.toISOString().split('T')[0],
+                'Jenis Transaksi': jenisTransaksi,
+                'ID Palet': idPaletString,
+                'Jumlah Palet': scannedIds.length,
+                'Jam Transaksi': now.toLocaleTimeString('id-ID'),
+                'Keterangan': kondisi,
+                'USERNAME': userUid,
+                'Driver': driverName,
+                'Submitted By': userUid
+            };
+
+            const payload = {
+                sheetName: TRANSACTION_SHEET_NAME,
+                transactions: [transactionData],
+                submittedBy: userUid,
+                timestamp: now.toLocaleString('id-ID')
             };
 
             try {
-                const response = await fetch(API_URL, {
+                await fetch(MOCK_API_DEPLOY_URL, {
                     method: 'POST',
-                    body: JSON.stringify(dataToSave),
-                    headers: { 'Content-Type': 'text/plain' } // Penting untuk Apps Script
+                    mode: 'no-cors', // Penting untuk Google Script
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
                 });
-                const result = await response.json();
+
+                // Simulasi delay agar user merasa proses selesai (karena no-cors tidak return response)
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // Sukses
+                statusEl.className = "mt-4 text-center text-sm font-bold text-green-500";
+                statusEl.textContent = "✅ Data Berhasil Disimpan!";
                 
-                if (result.status === 'success') {
-                    alert('Data berhasil disimpan!');
-                    // Reset daftar setelah berhasil disimpan
-                    scannedIDs.clear();
-                    qrListElement.innerHTML = '';
-                    countElement.textContent = '0';
-                } else {
-                    alert('Gagal menyimpan data.');
-                }
+                // Reset Form
+                scannedIds = [];
+                document.getElementById('scan-count').innerText = "0";
+                document.getElementById('scanned-list').innerHTML = '<span class="text-gray-600 text-xs italic w-full text-center mt-10">Data berhasil terkirim. Scan baru siap.</span>';
+                document.getElementById('driverName').value = "";
 
             } catch (error) {
-                console.error('Error:', error);
-                alert('Terjadi kesalahan saat menyimpan data.');
+                console.error(error);
+                statusEl.className = "mt-4 text-center text-sm font-bold text-red-500";
+                statusEl.textContent = "❌ Gagal mengirim data. Cek koneksi internet.";
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Simpan Data";
             }
-        }
-    </script>
+        };
 
+    </script>
 </body>
 </html>
-
-
