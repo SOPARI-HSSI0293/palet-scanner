@@ -24,13 +24,25 @@
             color: #ffffff;
         }
 
-        /* Style area scanner yang lebih compact */
+        /* --- LOGIN STYLES --- */
+        .login-view {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        .login-card {
+            background-color: #27272a; /* Zinc 800 */
+            border-top: 4px solid #22c55e; /* Aksen hijau */
+        }
+
+        /* --- SCANNER STYLES --- */
         #reader {
             width: 100%;
             border-radius: 0.75rem;
             overflow: hidden;
             background-color: #000;
-            /* Tinggi dikurangi agar lebih simpel */
             max-height: 250px; 
             object-fit: cover;
         }
@@ -40,20 +52,19 @@
             border-radius: 0.75rem;
         }
 
-        /* Menghilangkan elemen bawaan html5-qrcode yang mengganggu */
         #reader__dashboard_section_csr span, 
         #reader__dashboard_section_swaplink {
             display: none !important;
         }
 
         .card-dark {
-            background-color: #27272a; /* Zinc 800 */
-            border: 1px solid #3f3f46; /* Zinc 700 */
+            background-color: #27272a; 
+            border: 1px solid #3f3f46;
         }
         
         .input-dark {
-            background-color: #3f3f46; /* Zinc 700 */
-            border: 1px solid #52525b; /* Zinc 600 */
+            background-color: #3f3f46;
+            border: 1px solid #52525b;
             color: white;
         }
 
@@ -67,96 +78,136 @@
         }
 
         .custom-scrollbar::-webkit-scrollbar {
-            width: 4px; /* Scrollbar lebih tipis */
+            width: 4px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
             background: #4b5563; 
             border-radius: 2px;
         }
+
+        .hidden { display: none !important; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-start p-4 pt-6">
+<body>
 
-    <div class="w-full max-w-md w-full">
-        
-        <!-- Header -->
-        <div class="flex items-center justify-between mb-4">
-            <h1 class="text-xl font-bold text-green-400">Scan QR Palet</h1>
-            <div class="text-xs text-gray-400 text-right">
-                <span id="user-status">Guest</span><br>
-                <span id="data-status" class="text-yellow-500">Memuat Master Data...</span>
+    <!-- 1. TAMPILAN LOGIN -->
+    <div id="login-view" class="login-view">
+        <div class="login-card w-full max-w-sm p-8 rounded-lg shadow-2xl">
+            <div class="flex items-center justify-center mb-6">
+                <!-- Logo Placeholder -->
+                <div class="h-10 w-10 bg-green-600 rounded-full flex items-center justify-center mr-3">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-100 uppercase">Control Palet</h1>
             </div>
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Username</label>
+                    <input type="text" id="loginUsername" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 placeholder-gray-500 focus:ring-green-500 focus:border-green-500" placeholder="Masukkan username..." required>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Password</label>
+                    <input type="password" id="loginPassword" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 placeholder-gray-500 focus:ring-green-500 focus:border-green-500" placeholder="Masukkan password..." required>
+                </div>
+                <div id="login-error-message" class="hidden p-3 rounded-lg text-sm mb-4 font-medium bg-red-800 text-white" role="alert"></div>
+                <button type="submit" id="login-submit-btn" class="w-full bg-green-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-green-700 transition shadow-lg">Login</button>
+            </form>
+            <p class="text-center text-xs text-gray-500 mt-6">Aplikasi Kontrol Palet HANWA ( v4.9 )</p>
         </div>
+    </div>
 
-        <!-- 1. KONFIGURASI TRANSAKSI -->
-        <div class="card-dark rounded-xl p-3 mb-3 shadow-lg">
-            <div class="grid grid-cols-2 gap-2 mb-2">
+    <!-- 2. TAMPILAN UTAMA (SCANNER) -->
+    <div id="scanner-view" class="min-h-screen flex flex-col items-center justify-start p-4 pt-6 hidden">
+        <div class="w-full max-w-md w-full">
+            
+            <!-- Header Scanner -->
+            <div class="flex items-center justify-between mb-4 border-b border-gray-700 pb-2">
                 <div>
-                    <label class="text-[10px] uppercase text-gray-400 tracking-wider">Jenis Transaksi</label>
-                    <select id="jenisTransaksi" class="w-full mt-1 p-1.5 rounded-lg text-xs input-dark focus:ring-1 focus:ring-green-500 outline-none">
-                        <option value="KELUAR HANWA">Keluar (Kirim)</option>
-                        <option value="MASUK HANWA">Masuk (Terima)</option>
-                        <option value="DIGUNAKAN PRODUKSI">Produksi</option>
-                    </select>
+                    <h1 class="text-xl font-bold text-green-400">Scan QR Palet</h1>
+                    <span id="data-status" class="text-[10px] text-yellow-500">Memuat Master Data...</span>
+                </div>
+                <div class="text-xs text-gray-400 text-right">
+                    <div class="flex items-center justify-end">
+                        <span id="user-display" class="font-bold mr-2 text-white">Guest</span>
+                        <button onclick="handleLogout()" class="text-red-400 hover:text-red-300 border border-red-900 bg-red-900/20 px-2 py-1 rounded transition">
+                            Logout
+                        </button>
+                    </div>
+                    <span id="role-display" class="text-[10px] text-gray-500">User</span>
+                </div>
+            </div>
+
+            <!-- Konfigurasi Transaksi -->
+            <div class="card-dark rounded-xl p-3 mb-3 shadow-lg">
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <div>
+                        <label class="text-[10px] uppercase text-gray-400 tracking-wider">Jenis Transaksi</label>
+                        <select id="jenisTransaksi" class="w-full mt-1 p-1.5 rounded-lg text-xs input-dark focus:ring-1 focus:ring-green-500 outline-none">
+                            <option value="KELUAR HANWA">Keluar (Kirim)</option>
+                            <option value="MASUK HANWA">Masuk (Terima)</option>
+                            <option value="DIGUNAKAN PRODUKSI">Produksi</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] uppercase text-gray-400 tracking-wider">Kondisi</label>
+                        <select id="kondisi" class="w-full mt-1 p-1.5 rounded-lg text-xs input-dark focus:ring-1 focus:ring-green-500 outline-none">
+                            <option value="Baik">Baik</option>
+                            <option value="Rusak Ringan">Rusak Ringan</option>
+                            <option value="Rusak Berat">Rusak Berat</option>
+                        </select>
+                    </div>
                 </div>
                 <div>
-                    <label class="text-[10px] uppercase text-gray-400 tracking-wider">Kondisi</label>
-                    <select id="kondisi" class="w-full mt-1 p-1.5 rounded-lg text-xs input-dark focus:ring-1 focus:ring-green-500 outline-none">
-                        <option value="Baik">Baik</option>
-                        <option value="Rusak Ringan">Rusak Ringan</option>
-                        <option value="Rusak Berat">Rusak Berat</option>
-                    </select>
+                    <input type="text" id="driverName" class="w-full p-1.5 rounded-lg text-xs input-dark focus:ring-1 focus:ring-green-500 outline-none" placeholder="Nama Driver / Keterangan (Opsional)">
                 </div>
             </div>
-            <div>
-                <input type="text" id="driverName" class="w-full p-1.5 rounded-lg text-xs input-dark focus:ring-1 focus:ring-green-500 outline-none" placeholder="Nama Driver / Keterangan (Opsional)">
+
+            <!-- Hasil Scan -->
+            <div class="card-dark rounded-xl p-3 mb-3 shadow-lg relative overflow-hidden transition-all" id="scan-results-card">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-gray-300 font-bold text-sm">Total Scan</span>
+                    <span id="scan-count" class="text-2xl font-extrabold text-green-400">0</span>
+                </div>
+                
+                <div id="scanned-list" class="bg-zinc-900 rounded-lg p-2 h-20 overflow-y-auto custom-scrollbar flex flex-wrap content-start gap-1 border border-zinc-700">
+                    <span class="text-gray-600 text-[10px] italic w-full text-center mt-6">List kosong</span>
+                </div>
+                
+                <div class="flex justify-between mt-1 items-center">
+                    <button onclick="clearScannedData()" class="text-[10px] text-red-400 hover:text-red-300 bg-red-900/20 px-2 py-0.5 rounded">Reset</button>
+                    <span class="text-[10px] text-gray-500 truncate max-w-[150px]" id="last-scanned-info"></span>
+                </div>
             </div>
+
+            <!-- Area Kamera -->
+            <div class="relative group mb-4">
+                <div id="reader" class="border border-gray-700"></div>
+                <div id="camera-placeholder" class="bg-zinc-800 rounded-xl h-40 flex flex-col items-center justify-center border-2 border-dashed border-gray-600">
+                    <svg class="w-10 h-10 text-gray-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <p class="text-gray-500 text-xs">Kamera Non-Aktif</p>
+                </div>
+                
+                <div class="absolute bottom-4 left-0 right-0 flex justify-center z-10" id="btn-camera-container">
+                    <button id="toggle-camera-btn" onclick="toggleCamera()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-full shadow-lg text-xs font-bold flex items-center transition transform active:scale-95 border border-blue-400">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        Mulai Scan
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tombol Simpan -->
+            <button id="btn-simpan" onclick="submitData()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-green-900/50 transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-sm">
+                Simpan Data
+            </button>
+
+            <!-- Status Message -->
+            <div id="status-msg" class="mt-3 text-center text-xs font-medium hidden"></div>
+
+            <!-- Footer Baru -->
+            <footer class="mt-8 text-center text-[10px] text-gray-600 pb-4">
+                Aplikasi Kontrol Palet HANWA ( v4.9 ) - Elaborated by SOPARI-HSSI0293
+            </footer>
         </div>
-
-        <!-- 2. HASIL SCAN (DIPINDAHKAN KE ATAS) -->
-        <div class="card-dark rounded-xl p-3 mb-3 shadow-lg relative overflow-hidden transition-all" id="scan-results-card">
-            <div class="flex justify-between items-center mb-1">
-                <span class="text-gray-300 font-bold text-sm">Total Scan</span>
-                <span id="scan-count" class="text-2xl font-extrabold text-green-400">0</span>
-            </div>
-            
-            <!-- List ID (Ukuran diperkecil) -->
-            <div id="scanned-list" class="bg-zinc-900 rounded-lg p-2 h-20 overflow-y-auto custom-scrollbar flex flex-wrap content-start gap-1 border border-zinc-700">
-                <span class="text-gray-600 text-[10px] italic w-full text-center mt-6">List kosong</span>
-            </div>
-            
-            <div class="flex justify-between mt-1 items-center">
-                <button onclick="clearScannedData()" class="text-[10px] text-red-400 hover:text-red-300 bg-red-900/20 px-2 py-0.5 rounded">Reset</button>
-                <span class="text-[10px] text-gray-500 truncate max-w-[150px]" id="last-scanned-info"></span>
-            </div>
-        </div>
-
-        <!-- 3. AREA KAMERA (Ukuran diperkecil) -->
-        <div class="relative group mb-4">
-            <div id="reader" class="border border-gray-700"></div>
-            <!-- Overlay instruksi -->
-            <div id="camera-placeholder" class="bg-zinc-800 rounded-xl h-40 flex flex-col items-center justify-center border-2 border-dashed border-gray-600">
-                <svg class="w-10 h-10 text-gray-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                <p class="text-gray-500 text-xs">Kamera Non-Aktif</p>
-            </div>
-            
-            <!-- Tombol Mulai (Overlay di tengah bawah placeholder atau di bawahnya) -->
-            <div class="absolute bottom-4 left-0 right-0 flex justify-center z-10" id="btn-camera-container">
-                <button id="toggle-camera-btn" onclick="toggleCamera()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-full shadow-lg text-xs font-bold flex items-center transition transform active:scale-95 border border-blue-400">
-                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    Mulai Scan
-                </button>
-            </div>
-        </div>
-
-        <!-- 4. TOMBOL SIMPAN -->
-        <button id="btn-simpan" onclick="submitData()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-green-900/50 transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-sm">
-            Simpan Data
-        </button>
-
-        <!-- Status Message -->
-        <div id="status-msg" class="mt-3 text-center text-xs font-medium hidden"></div>
-
     </div>
 
     <!-- Audio Beep -->
@@ -164,49 +215,162 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        let auth, userUid = "Guest";
+        let auth, currentUser = null;
 
+        // --- FIREBASE INIT ---
         try {
             const app = initializeApp(firebaseConfig);
             auth = getAuth(app);
+            // Auth listener opsional, karena kita pakai login manual via Sheet
             onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    userUid = user.uid;
-                    document.getElementById('user-status').textContent = "User: " + userUid.substring(0, 6);
-                } else {
-                    signInAnonymously(auth);
-                }
+                if (!user) signInAnonymously(auth);
             });
-        } catch (e) {
-            console.log("Firebase visual mode");
-        }
+        } catch (e) { console.log("Firebase visual mode"); }
 
         // --- KONFIGURASI API & SHEET ---
         const GOOGLE_SHEET_ID = '1YiIDIa0Ysi-O0k4askOtd8Qf66KnQuJxlLMngDlqM1A'; 
         const MASTER_SHEET_NAME = 'MASTER PALET'; 
+        const USERCONTROL_SHEET_NAME = 'Usercontrol';
         const TRANSACTION_SHEET_NAME = 'Log Transaksi Palet Batch'; 
+        
         const MOCK_API_DEPLOY_URL = 'https://script.google.com/macros/s/AKfycbwiq9RP1jZykmw8a4W1PNgoUgfekOxCkAiHhnLtzFX8YB1I8TTPnzgkhNYQZH6I-MZJ/exec'; 
+        
         const MASTER_PALLET_URL = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${MASTER_SHEET_NAME}&range=A:H`;
+        const USERCONTROL_URL = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${USERCONTROL_SHEET_NAME}&range=A:C`;
 
         // --- STATE VARIABLES ---
-        let scannedData = []; // Array of Objects: { id, name, size }
-        let masterData = [];  // Cache Master Data
+        let scannedData = [];
+        let masterData = [];
         let html5QrcodeScanner = null;
         let isScanning = false;
 
-        // --- 1. FETCH MASTER DATA (AGAR BISA DAPAT NAMA & SIZE) ---
-        async function fetchMasterData() {
-            const statusEl = document.getElementById('data-status');
+        // --- HELPER FETCH SHEET ---
+        async function fetchSheetData(url) {
             try {
-                const response = await fetch(MASTER_PALLET_URL);
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("Network error");
                 const text = await response.text();
                 const jsonText = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
-                const json = JSON.parse(jsonText);
+                return JSON.parse(jsonText);
+            } catch (error) {
+                console.error("Fetch error:", error);
+                throw error;
+            }
+        }
+
+        // --- AUTH & LOGIN LOGIC ---
+        window.handleLogin = async function(event) {
+            event.preventDefault();
+            const usernameInput = document.getElementById('loginUsername');
+            const passwordInput = document.getElementById('loginPassword');
+            const errorBox = document.getElementById('login-error-message');
+            const submitBtn = document.getElementById('login-submit-btn');
+
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if (!username || !password) {
+                errorBox.textContent = "Username dan Password harus diisi.";
+                errorBox.classList.remove('hidden'); return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Memverifikasi...";
+            errorBox.classList.add('hidden');
+
+            try {
+                const json = await fetchSheetData(USERCONTROL_URL);
+                const rows = json.table.rows;
+                const cols = json.table.cols;
+
+                // Simple check column index 0 (User), 1 (Pass), 2 (Role)
+                let foundUser = null;
                 
-                // Parsing sederhana GViz
+                // Cari user yang cocok
+                for (let r of rows) {
+                    const u = r.c[0] ? String(r.c[0].v).trim() : '';
+                    const p = r.c[1] ? String(r.c[1].v).trim() : '';
+                    if (u === username && p === password) {
+                        foundUser = {
+                            username: u,
+                            role: r.c[2] ? String(r.c[2].v).trim() : 'User'
+                        };
+                        break;
+                    }
+                }
+
+                if (foundUser) {
+                    // Login Berhasil
+                    currentUser = foundUser;
+                    sessionStorage.setItem('scanAppUser', JSON.stringify(currentUser));
+                    switchView('scanner');
+                } else {
+                    errorBox.textContent = "Username atau Password salah.";
+                    errorBox.classList.remove('hidden');
+                }
+            } catch (err) {
+                errorBox.textContent = "Gagal terhubung ke server.";
+                errorBox.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Login";
+            }
+        };
+
+        window.handleLogout = function() {
+            sessionStorage.removeItem('scanAppUser');
+            currentUser = null;
+            if (isScanning && html5QrcodeScanner) {
+                html5QrcodeScanner.stop().then(() => {
+                    html5QrcodeScanner.clear();
+                    isScanning = false;
+                }).catch(err => console.error(err));
+            }
+            switchView('login');
+        };
+
+        function checkSession() {
+            const stored = sessionStorage.getItem('scanAppUser');
+            if (stored) {
+                currentUser = JSON.parse(stored);
+                switchView('scanner');
+            } else {
+                switchView('login');
+            }
+        }
+
+        function switchView(viewName) {
+            const loginView = document.getElementById('login-view');
+            const scannerView = document.getElementById('scanner-view');
+            
+            if (viewName === 'scanner') {
+                loginView.classList.add('hidden');
+                scannerView.classList.remove('hidden');
+                
+                // Update UI User
+                document.getElementById('user-display').textContent = currentUser.username;
+                document.getElementById('role-display').textContent = currentUser.role;
+                
+                // Load Master Data jika belum ada
+                if (masterData.length === 0) fetchMasterData();
+            } else {
+                loginView.classList.remove('hidden');
+                scannerView.classList.add('hidden');
+                document.getElementById('login-form').reset();
+            }
+        }
+
+        // --- 1. FETCH MASTER DATA ---
+        async function fetchMasterData() {
+            const statusEl = document.getElementById('data-status');
+            statusEl.textContent = "Memuat Master Data...";
+            statusEl.className = "text-[10px] text-yellow-500";
+            
+            try {
+                const json = await fetchSheetData(MASTER_PALLET_URL);
                 const cols = json.table.cols.map(c => (c.label || c.id).toUpperCase().trim());
                 const rows = json.table.rows;
                 
@@ -218,19 +382,16 @@
                     return obj;
                 });
 
-                statusEl.textContent = "Data Ready";
-                statusEl.className = "text-green-500 font-bold";
+                statusEl.textContent = "Master Data Siap";
+                statusEl.className = "text-[10px] text-green-500 font-bold";
                 console.log(`Master Data loaded: ${masterData.length} items`);
 
             } catch (error) {
                 console.error("Gagal load master data:", error);
-                statusEl.textContent = "Gagal Load Data";
-                statusEl.className = "text-red-500";
+                statusEl.textContent = "Gagal Load Master Data";
+                statusEl.className = "text-[10px] text-red-500";
             }
         }
-
-        // Panggil saat load
-        fetchMasterData();
 
         // --- 2. LOGIC SCANNER ---
         window.toggleCamera = function() {
@@ -252,7 +413,6 @@
                 }
             } else {
                 placeholder.style.display = 'none';
-                // Ubah style tombol saat scanning (pindah ke bawah reader)
                 btnContainer.classList.remove('absolute', 'bottom-4');
                 btnContainer.classList.add('relative', 'mt-2');
                 
@@ -260,7 +420,6 @@
                 btn.className = "bg-red-600 hover:bg-red-500 text-white px-5 py-2 rounded-full shadow-lg text-xs font-bold flex items-center transition border border-red-400";
                 
                 html5QrcodeScanner = new Html5Qrcode("reader");
-                // QR Box lebih kecil agar sesuai tampilan compact
                 const config = { fps: 10, qrbox: { width: 200, height: 200 }, aspectRatio: 1.0 };
                 
                 html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess, (err) => {})
@@ -270,11 +429,8 @@
 
         function onScanSuccess(decodedText, decodedResult) {
             const id = decodedText.trim().toUpperCase();
-            
-            // Cek duplikat di scannedData
             if (scannedData.some(item => item.id === id)) return;
 
-            // Cari Detail di Master Data
             let found = masterData.find(m => String(m['ID PALET']).trim().toUpperCase() === id);
             
             const itemData = {
@@ -296,7 +452,6 @@
             const listEl = document.getElementById('scanned-list');
             const cardEl = document.getElementById('scan-results-card');
             
-            // Animasi
             cardEl.classList.remove('scan-success-anim');
             void cardEl.offsetWidth; 
             cardEl.classList.add('scan-success-anim');
@@ -304,7 +459,6 @@
             if (scannedData.length === 1) listEl.innerHTML = '';
             
             const tag = document.createElement('span');
-            // Warna tag: Hijau jika ditemukan, Merah jika Unknown
             const colorClass = lastItem.name !== 'Unknown' ? 'bg-green-600' : 'bg-red-600';
             tag.className = `${colorClass} text-white text-[10px] font-mono px-1.5 py-0.5 rounded shadow animate-pulse border border-white/20`;
             tag.textContent = lastItem.id;
@@ -325,7 +479,7 @@
             }
         }
 
-        // --- 3. SUBMIT DENGAN GROUPING ---
+        // --- 3. SUBMIT DATA ---
         window.submitData = async function() {
             const btn = document.getElementById('btn-simpan');
             const statusEl = document.getElementById('status-msg');
@@ -344,8 +498,6 @@
             statusEl.classList.add('text-gray-400');
             statusEl.textContent = "Mengelompokkan data...";
 
-            // GROUPING DATA: Agar kolom Nama Palet & Size akurat
-            // Kita kelompokkan berdasarkan kombinasi "NAMA|SIZE"
             const groups = {};
             scannedData.forEach(item => {
                 const key = `${item.name}|${item.size}`;
@@ -358,9 +510,8 @@
             const tgl = now.toISOString().split('T')[0];
             const jam = now.toLocaleTimeString('id-ID');
 
-            // Buat Array Transaksi (1 Request bisa isi banyak row jika API mendukung array)
-            // Sesuai index.html sebelumnya, kita kirim array objek
             const transactionsToSend = [];
+            const username = currentUser ? currentUser.username : 'Guest';
 
             for (const [key, ids] of Object.entries(groups)) {
                 const [nama, size] = key.split('|');
@@ -370,13 +521,13 @@
                     'Size': size,
                     'Tanggal Transaksi': tgl,
                     'Jenis Transaksi': jenis,
-                    'ID Palet': ids.join(','), // Gabung ID dengan koma
+                    'ID Palet': ids.join(','),
                     'Jumlah Palet': ids.length,
                     'Jam Transaksi': jam,
                     'Keterangan': kondisi,
-                    'USERNAME': userUid,
+                    'USERNAME': username,
                     'Driver': driver,
-                    'Submitted By': userUid
+                    'Submitted By': username
                 });
             }
 
@@ -385,7 +536,7 @@
             const payload = {
                 sheetName: TRANSACTION_SHEET_NAME,
                 transactions: transactionsToSend,
-                submittedBy: userUid,
+                submittedBy: username,
                 timestamp: timestamp
             };
 
@@ -402,7 +553,6 @@
                 statusEl.className = "mt-3 text-center text-xs font-bold text-green-500";
                 statusEl.textContent = "✅ Data Berhasil Disimpan!";
                 
-                // Reset
                 scannedData = [];
                 document.getElementById('scan-count').innerText = "0";
                 document.getElementById('scanned-list').innerHTML = '<span class="text-gray-600 text-[10px] italic w-full text-center mt-6">Data tersimpan. Siap scan lagi.</span>';
@@ -418,6 +568,9 @@
                 btn.textContent = "Simpan Data";
             }
         };
+
+        // --- INIT ---
+        window.onload = checkSession;
     </script>
 </body>
 </html>
