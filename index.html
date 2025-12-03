@@ -289,12 +289,13 @@
                 
                 // Cari user yang cocok
                 for (let r of rows) {
-                    // Check if r.c[idx] exists before accessing .v
                     const u = r.c[0] && r.c[0].v ? String(r.c[0].v).trim() : '';
                     const p = r.c[1] && r.c[1].v ? String(r.c[1].v).trim() : '';
-                    if (u === username && p === password) {
+                    
+                    // MODIFIKASI: Perbandingan Username Case-Insensitive (Huruf Besar/Kecil dianggap sama)
+                    if (u.toLowerCase() === username.toLowerCase() && p === password) {
                         foundUser = {
-                            username: u,
+                            username: u, // Simpan username asli dari Database (bukan yang diketik user)
                             role: r.c[2] && r.c[2].v ? String(r.c[2].v).trim() : 'User'
                         };
                         break;
@@ -534,8 +535,9 @@
                     'Jumlah Palet': ids.length,
                     'Jam Transaksi': jam,
                     'Keterangan': kondisi,
-                    // FIX: Menggunakan username dari state currentUser
-                    'USERNAME': username, 
+                    // FIX: Menggunakan username dari state currentUser, disimpan ke 2 key untuk berjaga-jaga
+                    'Username': username, 
+                    'USERNAME': username,
                     'Driver': driver,
                     // FIX: Menggunakan username dari state currentUser
                     'Submitted By': username 
