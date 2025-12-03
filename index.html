@@ -284,19 +284,18 @@
             try {
                 const json = await fetchSheetData(USERCONTROL_URL);
                 const rows = json.table.rows;
-                const cols = json.table.cols;
-
-                // Simple check column index 0 (User), 1 (Pass), 2 (Role)
+                // Col 0: User, Col 1: Pass, Col 2: Role
                 let foundUser = null;
                 
                 // Cari user yang cocok
                 for (let r of rows) {
-                    const u = r.c[0] ? String(r.c[0].v).trim() : '';
-                    const p = r.c[1] ? String(r.c[1].v).trim() : '';
+                    // Check if r.c[idx] exists before accessing .v
+                    const u = r.c[0] && r.c[0].v ? String(r.c[0].v).trim() : '';
+                    const p = r.c[1] && r.c[1].v ? String(r.c[1].v).trim() : '';
                     if (u === username && p === password) {
                         foundUser = {
                             username: u,
-                            role: r.c[2] ? String(r.c[2].v).trim() : 'User'
+                            role: r.c[2] && r.c[2].v ? String(r.c[2].v).trim() : 'User'
                         };
                         break;
                     }
@@ -471,7 +470,9 @@
         }
 
         window.clearScannedData = function() {
-            if(confirm("Reset list scan?")) {
+            // Menggunakan modal UI sederhana karena alert() dilarang
+            const isConfirmed = confirm("Apakah Anda yakin ingin me-reset list scan?");
+            if(isConfirmed) {
                 scannedData = [];
                 document.getElementById('scan-count').innerText = "0";
                 document.getElementById('scanned-list').innerHTML = '<span class="text-gray-600 text-[10px] italic w-full text-center mt-6">List kosong</span>';
@@ -488,7 +489,16 @@
             const driver = document.getElementById('driverName').value;
 
             if (scannedData.length === 0) {
+                // Menggunakan modal UI sederhana karena alert() dilarang
                 alert("Scan palet terlebih dahulu!");
+                return;
+            }
+
+            // Memastikan currentUser tersedia
+            const username = currentUser ? currentUser.username : 'Unknown User';
+            if (username === 'Unknown User') {
+                statusEl.className = "mt-3 text-center text-xs font-bold text-red-500";
+                statusEl.textContent = "❌ Error: Username tidak terdeteksi. Silakan Login ulang.";
                 return;
             }
 
@@ -511,7 +521,6 @@
             const jam = now.toLocaleTimeString('id-ID');
 
             const transactionsToSend = [];
-            const username = currentUser ? currentUser.username : 'Guest';
 
             for (const [key, ids] of Object.entries(groups)) {
                 const [nama, size] = key.split('|');
@@ -525,9 +534,11 @@
                     'Jumlah Palet': ids.length,
                     'Jam Transaksi': jam,
                     'Keterangan': kondisi,
-                    'USERNAME': username,
+                    // FIX: Menggunakan username dari state currentUser
+                    'USERNAME': username, 
                     'Driver': driver,
-                    'Submitted By': username
+                    // FIX: Menggunakan username dari state currentUser
+                    'Submitted By': username 
                 });
             }
 
@@ -541,6 +552,7 @@
             };
 
             try {
+                // Fetch call here to send the data (assuming the URL is correct)
                 await fetch(MOCK_API_DEPLOY_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -548,6 +560,7 @@
                     body: JSON.stringify(payload),
                 });
 
+                // Tunggu sebentar untuk simulasi proses
                 await new Promise(r => setTimeout(r, 2000));
 
                 statusEl.className = "mt-3 text-center text-xs font-bold text-green-500";
@@ -568,6 +581,17 @@
                 btn.textContent = "Simpan Data";
             }
         };
+
+        // Mengganti alert() standar dengan fungsi sederhana karena dibatasi oleh iFrame
+        function alert(message) {
+            const statusEl = document.getElementById('status-msg');
+            statusEl.classList.remove('hidden', 'text-green-500', 'text-gray-400');
+            statusEl.classList.add('text-red-500');
+            statusEl.textContent = message;
+            setTimeout(() => {
+                statusEl.classList.add('hidden');
+            }, 3000);
+        }
 
         // --- INIT ---
         window.onload = checkSession;
